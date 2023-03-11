@@ -32,7 +32,7 @@
 
 // global vars
 bool buttonPressed = false;
-
+bool globalStatus = "ok";
 // servo definitions
 Servo s1;
 Servo s2;
@@ -76,7 +76,7 @@ void setup() {
   
   Serial.begin(115200);
   configureWiFi();
-
+  configureAPI();
   //Set servos
   s1.attach(Servo1);
   s2.attach(Servo2);
@@ -146,5 +146,29 @@ void configureWiFi(){
   /* Attach Message Callback */
   WebSerial.msgCallback(recvMsg);
   server.begin();
+}
+
+void configureAPI(){
+  server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", globalStatus);
+  });
+  server.on("/gps", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", "to be added");
+  });
+  server.on("/imu", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", "to be added");
+  });
+  server.on("/barometer", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", "to be added");
+  });
+  server.on("/pitot", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", "to be added");
+  });
+  server.on("/alphavane", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", "to be added");
+  });
+  server.on("/betavane", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", "to be added");
+  });
 }
 
