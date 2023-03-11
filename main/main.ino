@@ -5,6 +5,8 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <WebSerial.h>
+#include <arduino-timer.h>
+#include <Wire.h>
 
 // pin definitions
 #define PPL1 2
@@ -30,9 +32,6 @@
 
 // global vars
 bool buttonPressed = false;
-unsigned long currentTime = 0;
-
-int LEDBlinkPeriod = 100;
 
 // servo definitions
 Servo s1;
@@ -45,7 +44,8 @@ AsyncWebServer server(80);
 const char* ssid = "lt acft logger";
 const char* password = "inh_aircraft";
 
-
+//make timers
+auto timer = timer_create_default();
 
 void recvMsg(uint8_t *data, size_t len){
   String d = "";
@@ -60,6 +60,16 @@ void IRAM_ATTR onButtonPress(){
   Serial.println("Button pressed");
 }
 
+bool onboard_led_blink(void *) {
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // toggle the LED
+  if(digitalRead(LED_BUILTIN) == HIGH){ //turn off again after 50ms
+    timer.in(50,onboard_led_blink);
+  }
+  
+  return true; // keep timer active? true
+}
+
+
 
 void setup() {
   digitalWrite(TestLED, HIGH);
@@ -72,7 +82,7 @@ void setup() {
   s4.attach(Servo4);
 
   //Set outputs
-  pinMode(21, OUTPUT);
+  pinMode(TestLED, OUTPUT);
   pinMode(ONBOARD_LED, OUTPUT);
 
   //Set inputs
@@ -81,12 +91,15 @@ void setup() {
   //interrupts
   attachInterrupt(Button, onButtonPress, FALLING); //button pulls down, so detect falling edge for press  configureWiFi();
   
+  //timers
+  timer.every(2500, onboard_led_blink);
+
   digitalWrite(TestLED, LOW);
 }
 
 void loop() {
-  currentTime = millis();
-
+  
+  timer.tick();
 }
 
 void setServoPos(int position, int servoID) {
@@ -131,9 +144,5 @@ void configureWiFi(){
   /* Attach Message Callback */
   WebSerial.msgCallback(recvMsg);
   server.begin();
-}
-
-void heartbeat(){
-
 }
 
