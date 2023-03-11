@@ -75,6 +75,8 @@ void setup() {
   digitalWrite(TestLED, HIGH);
   
   Serial.begin(115200);
+  configureWiFi();
+
   //Set servos
   s1.attach(Servo1);
   s2.attach(Servo2);
@@ -89,7 +91,7 @@ void setup() {
   pinMode(Button, INPUT_PULLUP);
 
   //interrupts
-  attachInterrupt(Button, onButtonPress, FALLING); //button pulls down, so detect falling edge for press  configureWiFi();
+  attachInterrupt(Button, onButtonPress, FALLING); //button pulls down, so detect falling edge for press  
   
   //timers
   timer.every(2500, onboard_led_blink);
