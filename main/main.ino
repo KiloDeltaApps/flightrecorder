@@ -7,7 +7,9 @@
 #include <WebSerial.h>
 #include <arduino-timer.h>
 #include <Wire.h>
+#include <ArduinoJson.h>
 
+#define WEBSERVER_H
 // pin definitions
 #define PPL1 2
 #define PPL2 4
@@ -32,7 +34,7 @@
 
 // global vars
 bool buttonPressed = false;
-bool globalStatus = "ok";
+bool globalStatus = true;
 // servo definitions
 Servo s1;
 Servo s2;
@@ -41,7 +43,7 @@ Servo s4;
 
 //wifi settings
 AsyncWebServer server(80);
-const char* ssid = "lt acft logger";
+const char* ssid = "LTG1 Aircraft Data Logger";
 const char* password = "inh_aircraft";
 
 //make timers
@@ -69,14 +71,32 @@ bool onboard_led_blink(void *) {
   return true; // keep timer active? true
 }
 
+void handleDataRequest(AsyncWebServerRequest *request){
+  StaticJsonDocument<200> doc;
+  JsonArray data = doc.createNestedArray("sensordata");
 
+  JsonObject sensor1 = data.createNestedObject();
+  sensor1["pressure"] = readAnalogInput();
 
+  JsonObject sensor2 = data.createNestedObject();
+  sensor2["temperature"] = random(10, 30);
+
+  String jsonString;
+  serializeJson(doc,jsonString);
+  request->send(200, "application/json", jsonString);
+
+}
 void setup() {
   digitalWrite(TestLED, HIGH);
   
   Serial.begin(115200);
+  
+
+  //Networking
+  server.on("/json", HTTP_GET, handleDataRequest);
   configureWiFi();
-  configureAPI();
+  
+
   //Set servos
   s1.attach(Servo1);
   s2.attach(Servo2);
@@ -89,7 +109,7 @@ void setup() {
 
   //Set inputs
   pinMode(Button, INPUT_PULLUP);
-
+  pinMode(34, INPUT_PULLUP);
   //interrupts
   attachInterrupt(Button, onButtonPress, FALLING); //button pulls down, so detect falling edge for press  
   
@@ -100,8 +120,8 @@ void setup() {
 }
 
 void loop() {
-  
   timer.tick();
+  Serial.println(readAnalogInput());
 }
 
 void setServoPos(int position, int servoID) {
@@ -148,27 +168,10 @@ void configureWiFi(){
   server.begin();
 }
 
-void configureAPI(){
-  server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", globalStatus);
-  });
-  server.on("/gps", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", "to be added");
-  });
-  server.on("/imu", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", "to be added");
-  });
-  server.on("/barometer", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", "to be added");
-  });
-  server.on("/pitot", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", "to be added");
-  });
-  server.on("/alphavane", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", "to be added");
-  });
-  server.on("/betavane", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", "to be added");
-  });
+int readAnalogInput(){
+  return analogRead(34);
 }
 
+bool switchLED(void *){
+  digitalWrite(TestLED, !digitalRead(TestLED))
+} 
