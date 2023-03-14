@@ -6,8 +6,14 @@
 #include <ESPAsyncWebServer.h>
 #include <WebSerial.h>
 #include <arduino-timer.h>
-#include <Wire.h>
 #include <ArduinoJson.h>
+
+//sensor
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+
+//i2c
+#include <Wire.h>
 
 #define WEBSERVER_H
 // pin definitions
@@ -23,8 +29,8 @@
 #define Analog2 34
 #define TestLED 21
 #define Button 22
-#define SDA 33
-#define SCL 32
+#define I2C_SDA 33
+#define I2C_SCL 32
 #define Servo1 25
 #define Servo2 26
 #define Servo3 27
@@ -32,14 +38,27 @@
 
 #define ONBOARD_LED 2
 
+
 // global vars
 bool buttonPressed = false;
 bool globalStatus = true;
+float xrot;
+float yrot;
+float zrot;
+
+float xaccel;
+float yaccel;
+float zaccel;
+
+
 // servo definitions
 Servo s1;
 Servo s2;
 Servo s3;
 Servo s4;
+
+//imu definition
+Adafruit_MPU6050 imu;
 
 //wifi settings
 AsyncWebServer server(80);
@@ -71,6 +90,10 @@ bool onboard_led_blink(void *) {
   return true; // keep timer active? true
 }
 
+bool refreshSensors(void *){
+  readIMU();
+  return true;
+}
 void handleDataRequest(AsyncWebServerRequest *request){
   StaticJsonDocument<200> doc;
   JsonArray data = doc.createNestedArray("sensordata");
@@ -80,22 +103,36 @@ void handleDataRequest(AsyncWebServerRequest *request){
 
   JsonObject sensor2 = data.createNestedObject();
   sensor2["temperature"] = random(10, 30);
+  JsonObject imuData = data.createNestedObject();
+  readIMU();
+  imuData["xrot"] = xrot;
 
   String jsonString;
   serializeJson(doc,jsonString);
   request->send(200, "application/json", jsonString);
 
 }
+
+
+void initIMU(){
+  if (!imu.begin()){
+    Serial.println("IMU not found");
+  }
+  imu.setAccelerometerRange(MPU6050_RANGE_16_G);
+  imu.setGyroRange(MPU6050_RANGE_250_DEG); //250 deg/s 
+  imu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  delay(100);
+}
+
 void setup() {
   digitalWrite(TestLED, HIGH);
   
   Serial.begin(115200);
-  
 
-  //Networking
+  //Networking  
   server.on("/json", HTTP_GET, handleDataRequest);
   configureWiFi();
-  
+  initIMU();
 
   //Set servos
   s1.attach(Servo1);
@@ -110,18 +147,20 @@ void setup() {
   //Set inputs
   pinMode(Button, INPUT_PULLUP);
   pinMode(34, INPUT_PULLUP);
+  Wire.begin(I2C_SDA, I2C_SCL);
+
   //interrupts
   attachInterrupt(Button, onButtonPress, FALLING); //button pulls down, so detect falling edge for press  
   
   //timers
   timer.every(2500, onboard_led_blink);
+  timer.every(50,refreshSensors);
 
   digitalWrite(TestLED, LOW);
 }
 
 void loop() {
   timer.tick();
-  Serial.println(readAnalogInput());
 }
 
 void setServoPos(int position, int servoID) {
@@ -168,10 +207,28 @@ void configureWiFi(){
   server.begin();
 }
 
+
+void readIMU() {
+  sensors_event_t accel, gyro, temp;
+  imu.getEvent(&accel, &gyro, &temp);
+
+  //imuData[0] = accel.acceleration.x;
+  //imuData[1] = accel.acceleration.y;
+  //imuData[2] = accel.acceleration.z;
+  xrot = gyro.gyro.x;
+  //yrot = gyro.gyro.y;
+  //zrot = gyro.gyro.z;
+
+  //xaccel = accel.acceleration.x;
+  //yaccel = accel.acceleration.y;
+  //xaccel = accel.acceleration.z;
+}
+
 int readAnalogInput(){
   return analogRead(34);
 }
 
 bool switchLED(void *){
-  digitalWrite(TestLED, !digitalRead(TestLED))
-} 
+  digitalWrite(TestLED, !digitalRead(TestLED));
+}
+

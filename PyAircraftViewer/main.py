@@ -12,11 +12,12 @@ dpg.setup_dearpygui()
 
 def getData():
 
-    threading.Timer(0.1, getData).start()
+    threading.Timer(0.05, getData).start()
     try:
         response = requests.get("http://192.168.4.1/json", timeout=0.1)
         data = response.json()
         pressure = data['sensordata'][0]["pressure"]
+        print(data)
     except:
         pressure = "404"
     dpg.set_value("pressureText", pressure)
