@@ -104,8 +104,13 @@ void handleDataRequest(AsyncWebServerRequest *request){
   JsonObject sensor2 = data.createNestedObject();
   sensor2["temperature"] = random(10, 30);
   JsonObject imuData = data.createNestedObject();
-  readIMU();
   imuData["xrot"] = xrot;
+  imuData["yrot"] = yrot;
+  imuData["zrot"] = zrot;
+  
+  imuData["xaccel"] = xaccel;
+  imuData["yaccel"] = yaccel;  
+  imuData["zaccel"] = zaccel;
 
   String jsonString;
   serializeJson(doc,jsonString);
@@ -154,7 +159,7 @@ void setup() {
   
   //timers
   timer.every(2500, onboard_led_blink);
-  timer.every(50,refreshSensors);
+  timer.every(5,refreshSensors);
 
   digitalWrite(TestLED, LOW);
 }
@@ -215,12 +220,16 @@ void readIMU() {
   //imuData[0] = accel.acceleration.x;
   //imuData[1] = accel.acceleration.y;
   //imuData[2] = accel.acceleration.z;
+  Serial.println(accel.acceleration.z);
   xrot = gyro.gyro.x;
-  //yrot = gyro.gyro.y;
-  //zrot = gyro.gyro.z;
+  yrot = gyro.gyro.y;
+  zrot = gyro.gyro.z;
+  xaccel = accel.acceleration.x;
+  yaccel = accel.acceleration.y;
+  zaccel = accel.acceleration.z;
 
-  //xaccel = accel.acceleration.x;
-  //yaccel = accel.acceleration.y;
+
+
   //xaccel = accel.acceleration.z;
 }
 
