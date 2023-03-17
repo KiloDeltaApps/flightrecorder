@@ -111,7 +111,7 @@ void handleDataRequest(AsyncWebServerRequest *request){
   imuData["xaccel"] = xaccel;
   imuData["yaccel"] = yaccel;  
   imuData["zaccel"] = zaccel;
-
+  Serial.println(xro)
   String jsonString;
   serializeJson(doc,jsonString);
   request->send(200, "application/json", jsonString);
@@ -159,7 +159,7 @@ void setup() {
   
   //timers
   timer.every(2500, onboard_led_blink);
-  timer.every(5,refreshSensors);
+  timer.every(10,refreshSensors);
 
   digitalWrite(TestLED, LOW);
 }
@@ -217,10 +217,6 @@ void readIMU() {
   sensors_event_t accel, gyro, temp;
   imu.getEvent(&accel, &gyro, &temp);
 
-  //imuData[0] = accel.acceleration.x;
-  //imuData[1] = accel.acceleration.y;
-  //imuData[2] = accel.acceleration.z;
-  Serial.println(accel.acceleration.z);
   xrot = gyro.gyro.x;
   yrot = gyro.gyro.y;
   zrot = gyro.gyro.z;

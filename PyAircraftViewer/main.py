@@ -20,7 +20,7 @@ def getData():
                   10-data['sensordata'][2]['zaccel'],
                   data['sensordata'][2]['yaccel']]
         dpg.set_value('accelGraph', accels)
-
+        print(accels)
     except Exception as e:
         print(e)
 
